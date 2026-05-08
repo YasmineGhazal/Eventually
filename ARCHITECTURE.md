@@ -108,12 +108,16 @@ There is no DI container. `createApp(queue?)` accepts an optional queue instance
 
 ## AI Usage
 
-Claude (Sonnet 4.6) was used to scaffold the full project across both the initial NestJS version and the Express rewrite.
+Claude (Sonnet 4.6) was used throughout — initial project structure, implementation of all modules, tests, Docker setup, and documentation. All architectural decisions, stack choices, and feature direction were made independently; AI was the implementation tool. The examples below show where that output was reviewed, questioned, and corrected.
 
 **Where suggestions were overridden:**
 
-The original NestJS scaffolding used two `@Processor(JOBS_QUEUE)` classes — one for each job type — each creating its own BullMQ `Worker`. Both workers consumed from the same queue, with an early-return guard (`if (job.name !== JobType.X) return`) to skip irrelevant jobs. This is subtly broken: whichever worker picks up a job first marks it complete, so the intended processor may never run. The rewrite replaced this with a single `Worker` that dispatches by job name — the correct BullMQ pattern.
+The original AI-generated code used two `@Processor(JOBS_QUEUE)` classes — one for each job type — each creating its own BullMQ `Worker`. Both workers consumed from the same queue, with an early-return guard (`if (job.name !== JobType.X) return`) to skip irrelevant jobs. This is subtly broken: whichever worker picks up a job first marks it complete, so the intended processor may never run. The rewrite replaced this with a single `Worker` that dispatches by job name — the correct BullMQ pattern.
 
 The image-resize worker hardcoded `image/jpeg` as the MIME type in the data URI regardless of the input image format. The fix was switching from `toBuffer()` to `toBuffer({ resolveWithObject: true })`, which returns `info.format` from sharp's own output metadata. The hardcoded version would have silently corrupted PNG and WebP images by labelling them as JPEG.
+
+Adding a login test mid-suite caused 17 subsequent tests to fail with 401. The root cause was that `POST /auth/login` increments `tokenVersion` on the user document — the same mechanism the entire auth system uses to invalidate old tokens — so the token captured at registration was silently revoked. The system was working exactly as designed, and that was the problem. The fix was one line (capture the new token from the login response), but the diagnosis required understanding the revocation mechanism end to end.
+
+The skills match worker initially returned `0%` for job postings with no required skills. Mathematically consistent, but semantically wrong — a posting with no requirements doesn't mean every applicant is a poor match, it means the score is undefined. Changed to return `'N/A'` instead.
 
 **One specific decision:** AI defaulted to keeping `class-validator` DTOs for the Express rewrite (familiar from the NestJS version). This was replaced with `zod` schemas defined inline in each router file. Zod needs no decorators or `reflect-metadata`, the schemas are co-located with the routes that use them, and parse errors produce structured output with no extra middleware layer.
