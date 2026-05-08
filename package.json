@@ -8,7 +8,7 @@
     "start:dev": "ts-node src/main.ts",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
+    "test:cov": "jest --config ./test/jest-all.json --coverage --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --passWithNoTests",
     "seed": "ts-node -r dotenv/config src/scripts/seed.ts",
     "lint": "eslint \"src/**/*.ts\""
