@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -f nest-cli.json src/app.module.ts src/auth/auth.module.ts src/auth/jwt.strategy.ts src/auth/jwt-auth.guard.ts src/auth/public.decorator.ts src/auth/user.schema.ts src/auth/dto/register.dto.ts src/auth/dto/login.dto.ts src/jobs/jobs.module.ts src/jobs/job.schema.ts src/jobs/dto/create-job.dto.ts src/jobs/dto/list-jobs.dto.ts src/workers/workers.module.ts src/workers/image-resize.processor.ts src/workers/report-generate.processor.ts src/workers/image-resize.processor.spec.ts src/workers/report-generate.processor.spec.ts)",
+      "Bash(rmdir src/auth/dto src/jobs/dto)"
+    ]
+  }
+}
