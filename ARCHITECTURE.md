@@ -4,45 +4,45 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                           CLIENT                                 │
+│                           CLIENT                                │
 └──────────────────────────────┬──────────────────────────────────┘
                                │  HTTP/REST  Bearer <JWT>
                                ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                   EXPRESS API  :3001                             │
-│                                                                  │
-│  jwtMiddleware ──► tokenVersion check (DB hit per request)       │
-│  requireRole   ──► role guard (user | admin)                     │
-│                                                                  │
-│  /auth            /job-postings      /applications   /jobs       │
-│  register         CRUD (admin)       mine (user)     list        │
-│  register-admin   apply (user)       status (admin)  status      │
-│  login            applications                       download    │
-│  me               skills-report                                  │
-│  profile-image                                                   │
+│                   EXPRESS API  :3001                            │
+│                                                                 │
+│  jwtMiddleware ──► tokenVersion check (DB hit per request)      │
+│  requireRole   ──► role guard (user | admin)                    │
+│                                                                 │
+│  /auth            /job-postings      /applications   /jobs      │
+│  register         CRUD (admin)       mine (user)     list       │
+│  register-admin   apply (user)       status (admin)  status     │
+│  login            applications                       download   │
+│  me               skills-report                                 │
+│  profile-image                                                  │
 └──────┬────────────────────┬─────────────────────────────────────┘
        │                    │
-       │ Mongoose            │ queue.add(jobType, { jobId, payload })
+       │ Mongoose           │ queue.add(jobType, { jobId, payload })
        ▼                    ▼
 ┌──────────────┐   ┌────────────────────────────────────────────┐
-│   MongoDB    │   │           Redis  /  BullMQ                  │
-│              │   │           "jobs" queue                       │
-│  users       │   │   attempts: 3  backoff: exponential 1s      │
+│   MongoDB    │   │           Redis  /  BullMQ                 │
+│              │   │           "jobs" queue                     │
+│  users       │   │   attempts: 3  backoff: exponential 1s     │
 │  jobpostings │   └───────────────────┬────────────────────────┘
 │  applications│                       │ dequeue
 │  jobs        │                       ▼
 │              │   ┌────────────────────────────────────────────┐
-│              │   │   BullMQ Worker  (concurrency: N)           │
-│              │   │                                             │
-│              │   │  image-resize          report-generate      │
-│              │   │  ─────────────         ───────────────────  │
-│              │   │  axios.get(imageUrl)   fetch posting        │
-│              │   │  sharp.resize()        fetch applications   │
-│              │   │  toBuffer({            compute match scores │
-│              │   │    resolveWithObject}) fast-csv → CSV       │
-│              │   │  write profileImageUrl                      │
-│              │◄──┤                                             │
-│  jobs.status │   │  on complete → JobModel.findByIdAndUpdate   │
+│              │   │   BullMQ Worker  (concurrency: N)          │
+│              │   │                                            │
+│              │   │  image-resize          report-generate     │
+│              │   │  ─────────────         ─────────────────── │
+│              │   │  axios.get(imageUrl)   fetch posting       │
+│              │   │  sharp.resize()        fetch applications  │
+│              │   │  toBuffer({            compute match scores│
+│              │   │    resolveWithObject}) fast-csv → CSV      │
+│              │   │  write profileImageUrl                     │
+│              │◄──┤                                            │
+│  jobs.status │   │  on complete → JobModel.findByIdAndUpdate  │
 │  jobs.result │   │  on failed   → status=failed, error=msg    │
 └──────────────┘   └────────────────────────────────────────────┘
 ```
